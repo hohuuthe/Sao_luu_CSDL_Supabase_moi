@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src https://api.github.com https://*.actions.githubusercontent.com https://*.blob.core.windows.net; base-uri 'none'; frame-ancestors 'none'; object-src 'none'">
+  <meta name="theme-color" content="#08111f">
+  <title>Supabase Database Control Center</title>
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">DB</div>
+        <div>
+          <div class="eyebrow">Sao_luu_CSDL_Supabase_moi</div>
+          <h1>Supabase Database Control Center</h1>
+          <p>Chạy V4–V7, theo dõi kết quả và tải file ngay trên web.</p>
+        </div>
+      </div>
+      <div class="top-actions">
+        <span id="connectionBadge" class="badge muted">Chưa kết nối</span>
+        <button id="refreshBtn" class="btn ghost" type="button">Làm mới</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero-grid">
+        <article class="panel connection-panel">
+          <div class="panel-head">
+            <div>
+              <span class="section-kicker">KẾT NỐI</span>
+              <h2>GitHub API</h2>
+            </div>
+            <span class="repo-chip">hohuuthe/TOOL_TAO_CSDL_MOI</span>
+          </div>
+          <p class="muted-text">Token chỉ dùng để gọi GitHub API và được giữ trong <code>sessionStorage</code> của tab hiện tại. Công cụ không nhận URL CSDL, mật khẩu CSDL hay mật khẩu mã hóa.</p>
+          <div class="token-row">
+            <input id="tokenInput" type="password" autocomplete="off" spellcheck="false" placeholder="Fine-grained GitHub PAT — Actions: Read and write, Contents: Read">
+            <button id="connectBtn" class="btn primary" type="button">Kết nối</button>
+            <button id="disconnectBtn" class="btn ghost" type="button">Ngắt</button>
+          </div>
+          <div id="connectionMessage" class="message hidden"></div>
+          <div class="micro-note">Sau khi cấu hình repository/secrets một lần, các lần chạy thường ngày không cần mở GitHub Actions.</div>
+        </article>
+
+        <article class="panel health-panel">
+          <div class="panel-head">
+            <div>
+              <span class="section-kicker">TRẠNG THÁI</span>
+              <h2>Workflow nguồn</h2>
+            </div>
+            <button id="checkWorkflowsBtn" class="btn ghost small" type="button" disabled>Kiểm tra</button>
+          </div>
+          <div class="health-list">
+            <div class="health-row"><span>V4 · Cấu trúc</span><span id="healthV4" class="health-dot pending">—</span></div>
+            <div class="health-row"><span>V5 · Cấu trúc + phục hồi</span><span id="healthV5" class="health-dot pending">—</span></div>
+            <div class="health-row"><span>V6 · Dữ liệu</span><span id="healthV6" class="health-dot pending">—</span></div>
+            <div class="health-row"><span>V7 · Phục hồi artifact V6</span><span id="healthV7" class="health-dot pending">—</span></div>
+          </div>
+          <div id="workflowHealthText" class="micro-note">Chưa kiểm tra.</div>
+        </article>
+      </section>
+
+      <section class="section-block">
+        <div class="section-title-row">
+          <div>
+            <span class="section-kicker">CÔNG CỤ</span>
+            <h2>V4 – V7</h2>
+          </div>
+          <div class="legend"><span class="dot safe"></span> Chỉ đọc/kiểm tra <span class="dot warn"></span> Có thể ghi TARGET</div>
+        </div>
+
+        <div class="tool-grid">
+          <article class="tool-card safe-card">
+            <div class="card-top">
+              <span class="version">V4</span><span class="risk safe-risk">Không ghi TARGET</span>
+            </div>
+            <h3>Sao lưu cấu trúc</h3>
+            <p>Đọc <code>SOURCE_DB_URL</code>, tạo SQL schema-only gồm bảng, hàm, trigger, RLS, audit, ACL/GRANT/REVOKE; không sao lưu dữ liệu bản ghi.</p>
+            <div class="card-meta"><span>Đầu ra</span><strong>SQL V4 trong repository</strong></div>
+            <div class="card-actions">
+              <button class="btn primary run-mode" data-run="v4" type="button" disabled>Chạy V4</button>
+              <button id="downloadV4Btn" class="btn ghost download-generated" data-file="v4" type="button" disabled>Tải SQL V4</button>
+            </div>
+          </article>
+
+          <article class="tool-card danger-card">
+            <div class="card-top">
+              <span class="version">V5</span><span class="risk danger-risk">Ghi TARGET</span>
+            </div>
+            <h3>Sao lưu & phục hồi cấu trúc</h3>
+            <p>Tạo cấu trúc từ SOURCE, kiểm thử trên Supabase local sạch rồi phục hồi cấu trúc sang <code>TARGET_DB_URL</code>.</p>
+            <label class="field-label" for="v5Confirm">Mã xác nhận</label>
+            <input id="v5Confirm" class="mono-input" type="text" autocomplete="off" spellcheck="false" placeholder="PHUC_HOI_V5">
+            <div class="danger-note">TARGET phải là CSDL mới/trống và khác SOURCE.</div>
+            <div class="card-actions">
+              <button class="btn danger run-mode" data-run="v5" type="button" disabled>Chạy V5</button>
+              <button id="downloadV5Btn" class="btn ghost download-generated" data-file="v5" type="button" disabled>Tải SQL V5</button>
+            </div>
+          </article>
+
+          <article class="tool-card mixed-card">
+            <div class="card-top">
+              <span class="version">V6</span><span id="v6Risk" class="risk safe-risk">Không ghi TARGET</span>
+            </div>
+            <h3>Sao lưu & phục hồi dữ liệu</h3>
+            <p>DATA-only. Có thể chỉ kiểm tra local, tạo artifact mã hóa hoặc vừa backup vừa phục hồi dữ liệu sang TARGET.</p>
+            <label class="field-label" for="v6Mode">Chế độ</label>
+            <select id="v6Mode">
+              <option value="KIEM_TRA_LOCAL">KIEM_TRA_LOCAL — chỉ kiểm thử local</option>
+              <option value="BACKUP_ONLY">BACKUP_ONLY — tạo artifact mã hóa</option>
+              <option value="BACKUP_AND_RESTORE">BACKUP_AND_RESTORE — backup + phục hồi TARGET</option>
+            </select>
+            <div id="v6ConfirmWrap" class="hidden">
+              <label class="field-label" for="v6Confirm">Mã xác nhận</label>
+              <input id="v6Confirm" class="mono-input" type="text" autocomplete="off" spellcheck="false" placeholder="PHUC_HOI_DATA_V6">
+            </div>
+            <div id="v6ModeHint" class="mode-hint">Không cần mã xác nhận, không tạo artifact và không cần mật khẩu mã hóa.</div>
+            <div class="card-actions"><button class="btn primary run-mode" data-run="v6" type="button" disabled>Chạy V6</button></div>
+          </article>
+
+          <article class="tool-card mixed-card">
+            <div class="card-top">
+              <span class="version">V7</span><span id="v7Risk" class="risk safe-risk">Không ghi TARGET</span>
+            </div>
+            <h3>Phục hồi từ bản sao V6</h3>
+            <p>Tự tìm các V6 BACKUP_ONLY có artifact hợp lệ, kiểm tra checksum + giải mã + phục hồi thử local trước khi cho phép ghi TARGET.</p>
+            <label class="field-label" for="v7Backup">Bản sao V6</label>
+            <div class="select-refresh">
+              <select id="v7Backup"><option value="">Kết nối để nạp danh sách…</option></select>
+              <button id="loadBackupsBtn" class="btn ghost icon-btn" type="button" disabled title="Nạp lại bản sao V6">↻</button>
+            </div>
+            <label class="field-label" for="v7Mode">Chế độ</label>
+            <select id="v7Mode">
+              <option value="KIEM_TRA_LOCAL">KIEM_TRA_LOCAL — chỉ kiểm tra local</option>
+              <option value="PHUC_HOI_TARGET">PHUC_HOI_TARGET — phục hồi TARGET</option>
+            </select>
+            <div id="v7ConfirmWrap" class="hidden">
+              <label class="field-label" for="v7Confirm">Mã xác nhận</label>
+              <input id="v7Confirm" class="mono-input" type="text" autocomplete="off" spellcheck="false" placeholder="PHUC_HOI_BACKUP_V7">
+            </div>
+            <div id="v7ModeHint" class="mode-hint">Chế độ kiểm tra local sẽ tự dùng mã an toàn <code>KIEM_TRA_BACKUP_V7</code>.</div>
+            <div class="card-actions"><button class="btn primary run-mode" data-run="v7" type="button" disabled>Chạy V7</button></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="run-layout">
+        <article class="panel run-panel">
+          <div class="panel-head">
+            <div><span class="section-kicker">ĐANG THEO DÕI</span><h2>Lượt chạy hiện tại</h2></div>
+            <div class="run-actions">
+              <button id="cancelRunBtn" class="btn danger small" type="button" disabled>Hủy run</button>
+              <button id="logsBtn" class="btn ghost small" type="button" disabled>Tải log</button>
+              <button id="artifactsBtn" class="btn ghost small" type="button" disabled>Artifact</button>
+            </div>
+          </div>
+          <div id="runHint" class="muted-text">Chưa có workflow nào được chạy trong phiên này.</div>
+          <div class="progress"><div id="progressBar" class="progress-bar"></div></div>
+          <div class="run-stats">
+            <div><span>Workflow</span><strong id="runWorkflow">—</strong></div>
+            <div><span>Trạng thái</span><strong id="runStatus">—</strong></div>
+            <div><span>Kết luận</span><strong id="runConclusion">—</strong></div>
+            <div><span>Bắt đầu</span><strong id="runStarted">—</strong></div>
+            <div><span>Thời lượng</span><strong id="runDuration">—</strong></div>
+            <div><span>Run ID</span><strong id="runId">—</strong></div>
+          </div>
+          <div id="artifactList" class="artifact-list hidden"></div>
+        </article>
+
+        <article class="panel summary-panel">
+          <div class="panel-head"><div><span class="section-kicker">TỔNG QUAN</span><h2>20 lượt gần nhất</h2></div></div>
+          <div class="summary-grid">
+            <div class="summary-item"><span>Đang chạy/chờ</span><strong id="statRunning">—</strong></div>
+            <div class="summary-item"><span>Thành công gần nhất</span><strong id="statSuccess">—</strong></div>
+            <div class="summary-item"><span>Thất bại gần nhất</span><strong id="statFailure">—</strong></div>
+            <div class="summary-item"><span>Cập nhật</span><strong id="statUpdated">—</strong></div>
+          </div>
+        </article>
+      </section>
+
+      <section class="panel history-panel">
+        <div class="panel-head">
+          <div><span class="section-kicker">LỊCH SỬ</span><h2>Workflow runs V4–V7</h2></div>
+          <select id="historyFilter" class="compact-select">
+            <option value="all">Tất cả V4–V7</option><option value="v4">V4</option><option value="v5">V5</option><option value="v6">V6</option><option value="v7">V7</option>
+          </select>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Phiên bản</th><th>Trạng thái</th><th>Kết luận</th><th>Bắt đầu</th><th>Thời lượng</th><th>Run ID</th><th></th></tr></thead>
+            <tbody id="historyBody"><tr><td colspan="7" class="empty">Kết nối GitHub để xem lịch sử.</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel security-panel">
+        <div class="panel-head"><div><span class="section-kicker">BẢO MẬT</span><h2>Nguyên tắc vận hành</h2></div></div>
+        <div class="security-grid">
+          <div><strong>Không chứa secrets</strong><p>DB URL, TARGET URL và mật khẩu mã hóa vẫn nằm trong GitHub Actions Secrets của repo workflow nguồn.</p></div>
+          <div><strong>Không nhân bản workflow</strong><p>Web gọi trực tiếp V4–V7 đang ở nhánh <code>main</code>, tránh chạy bản cũ sau khi workflow được sửa.</p></div>
+          <div><strong>Chặn thao tác nguy hiểm</strong><p>V5, V6 restore và V7 restore yêu cầu đúng mã xác nhận trước khi gửi lệnh.</p></div>
+          <div><strong>V7 chọn backup tự động</strong><p>Chỉ liệt kê run V6 manual thành công có artifact <code>V6-FULL-DATA-ENCRYPTED</code>.</p></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="confirmDialog">
+    <form method="dialog" class="dialog-card">
+      <div class="dialog-icon" id="dialogIcon">!</div>
+      <h2 id="dialogTitle">Xác nhận chạy</h2>
+      <p id="dialogText"></p>
+      <div id="dialogWarning" class="dialog-warning hidden"></div>
+      <label id="dangerAckWrap" class="ack hidden"><input id="dangerAck" type="checkbox"> <span>Tôi đã kiểm tra SOURCE/TARGET và hiểu thao tác này có thể ghi dữ liệu vào TARGET.</span></label>
+      <div class="dialog-actions">
+        <button value="cancel" class="btn ghost">Hủy</button>
+        <button id="dialogConfirmBtn" value="run" class="btn primary">Xác nhận chạy</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toastHost" class="toast-host" aria-live="polite"></div>
+  <script src="./app.js" defer></script>
+</body>
+</html>
